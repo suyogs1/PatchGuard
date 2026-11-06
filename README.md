@@ -43,6 +43,20 @@ flowchart TD
     subgraph VULTR_HOST ["<b>Vultr Cloud Compute Control Plane (Ubuntu 24.04)</b>"]
         FastAPI["⚙️ <b>FastAPI Control Layer (:8001)</b><br/>• Secret Isolation (No tokens in sandboxes)<br/>• Telemetry Polling (/proc delta)<br/>• Lifecycle & Hard Limit Enforcement"]:::control
         
+```mermaid
+flowchart TD
+    classDef client fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#ffffff;
+    classDef control fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#ffffff;
+    classDef sandbox fill:#111827,stroke:#f43f5e,stroke-width:2px,color:#ffffff;
+    classDef verify fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#ffffff;
+    classDef vultr fill:#312e81,stroke:#a78bfa,stroke-width:2px,color:#ffffff;
+    classDef output fill:#065f46,stroke:#10b981,stroke-width:2px,color:#ffffff;
+
+    User["🖥️ <b>Client Dashboard</b><br/>Next.js 16 Interface<br/><i>(Port :3000 / WebSockets)</i>"]:::client
+
+    subgraph VULTR_HOST ["<b>Vultr Cloud Compute Control Plane (Ubuntu 24.04)</b>"]
+        FastAPI["⚙️ <b>FastAPI Control Layer (:8001)</b><br/>• Secret Isolation (No tokens in sandboxes)<br/>• Telemetry Polling (/proc delta)<br/>• Lifecycle & Hard Limit Enforcement"]:::control
+        
         subgraph GVISOR_RUNNERS ["<b>Google gVisor Micro-Sandboxes (runsc)</b>"]
             SB1["🔴 <b>Sandbox #01: Adversarial Reproduction</b><br/>• Unpatched Code Baseline<br/>• Live Weaponized Exploit Replay<br/>• Intercepted Syscalls / User-Space Kernel"]:::sandbox
             
@@ -64,6 +78,8 @@ flowchart TD
     SB2 -->|"6. Retest Passed + Telemetry Verified"| FastAPI
     FastAPI -->|"7. Open Cryptographically Signed PR"| GitHubPR
     FastAPI -.->|"Live Stage Stream & Telemetry"| User
+```
+    
 ## 3. How the Agent Executes Real Tasks (The 4-Phase Loop)
 
 1. **Adversarial Reproduction (Sandbox #01):**  
