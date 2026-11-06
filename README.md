@@ -30,50 +30,40 @@ PatchGuard AIRLOCK uses Vultr as its core control plane and intelligence engine:
   Deploys, manages, and provisions the multi-container production stack (FastAPI backend + Next.js frontend) with automated zero-downtime builds and network isolation.
 * **Vultr Serverless Inference (`deepseek-v4-flash-0731`):**  
   Powers the autonomous reasoning engine. When Sandbox #01 captures an active exploit, AIRLOCK dispatches AST data, exception traces, and execution telemetry to Vultr Serverless Inference. The model diagnoses the root cause, analyzes potential attack bypasses, and emits an exact, minimal patch.
-┌──────────────────────────────────────────────┐
-                        │              Client Browser                  │
-                        │           (Next.js 16 Dashboard)             │
-                        └──────────────────────┬───────────────────────┘
-                                               │ HTTP / WebSocket (:8001)
-                                               ▼
-┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│ VULTR CLOUD COMPUTE CONTROL PLANE                                                       │
-│                                                                                         │
-│  ┌───────────────────────────────────────────────────────────────────────────────────┐  │
-│  │ FastAPI Control Layer (server.py)                                                 │  │
-│  │ - Secret Hygiene: API keys stay isolated on host runtime                          │  │
-│  │ - Telemetry Monitor: Samples /proc/stat & memory delta every 250ms                │  │
-│  │ - Lifecycle Manager: Strict resource quotas (1 CPU, 512MB RAM, PID cap: 100)      │  │
-│  └───────────┬──────────────────────────────────────────┬────────────────────────────┘  │
-│              │                                          │                               │
-│              │ Dispatch Failure Logs & AST              │ Spawns Isolated Containers    │
-│              ▼                                          ▼ via /var/run/docker.sock      │
-│  ┌───────────────────────────────┐     ┌─────────────────────────────────────────────┐  │
-│  │   Vultr Serverless Inference  │     │ Google gVisor Micro-Sandboxes (runsc)       │  │
-│  │   (deepseek-v4-flash-0731)    │     │                                             │  │
-│  │                               │     │  [Sandbox #01: Reproduction Phase]          │  │
-│  │  - Zero-shot Root Cause AST   │     │  - Replays target exploit payload           │  │
-│  │  - Deterministic Patch Synth  │     │  - Confirms vulnerability trigger           │  │
-│  │  - Security Invariant Rules   │     │  - Ephemeral destroy on exit                │  │
-│  └───────────┬───────────────────┘     │                                             │  │
-│              │ Emits Patch             │  [Sandbox #02: Proof-Before-Ship Phase]     │  │
-│              └────────────────────────►│  - Applies AI-synthesized patch             │  │
-│                                        │  - Replays primary attack (verifies block)  │  │
-│                                        │  - Red-Team mutation barrage (fuzz tests)   │  │
-│                                        │  - Runs full 47/47 regression suite         │  │
-│                                        └─────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────┬──────────────────────────────────┘
-                                                       │
-                                                       │ Verified Fix + Evidence Receipt
-                                                       ▼
-                                      ┌─────────────────────────────────┐
-                                      │       GitHub Pull Request       │
-                                      │ - Branch: patchguard/fix-*      │
-                                      │ - Tamper-evident SHA-256 Digest │
-                                      │ - Host Containment Audit Logs   │
-                                      └─────────────────────────────────┘
----
+flowchart TD
+    classDef client fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#ffffff;
+    classDef control fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#ffffff;
+    classDef sandbox fill:#111827,stroke:#f43f5e,stroke-width:2px,color:#ffffff;
+    classDef verify fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#ffffff;
+    classDef vultr fill:#312e81,stroke:#a78bfa,stroke-width:2px,color:#ffffff;
+    classDef output fill:#065f46,stroke:#10b981,stroke-width:2px,color:#ffffff;
 
+    User["🖥️ <b>Client Dashboard</b><br/>Next.js 16 Interface<br/><i>(Port :3000 / WebSockets)</i>"]:::client
+
+    subgraph VULTR_HOST ["<b>Vultr Cloud Compute Control Plane (Ubuntu 24.04)</b>"]
+        FastAPI["⚙️ <b>FastAPI Control Layer (:8001)</b><br/>• Secret Isolation (No tokens in sandboxes)<br/>• Telemetry Polling (/proc delta)<br/>• Lifecycle & Hard Limit Enforcement"]:::control
+        
+        subgraph GVISOR_RUNNERS ["<b>Google gVisor Micro-Sandboxes (runsc)</b>"]
+            SB1["🔴 <b>Sandbox #01: Adversarial Reproduction</b><br/>• Unpatched Code Baseline<br/>• Live Weaponized Exploit Replay<br/>• Intercepted Syscalls / User-Space Kernel"]:::sandbox
+            
+            SB2["🟢 <b>Sandbox #02: Proof-Before-Ship</b><br/>• Patched Code Mount<br/>• Exploit Replay Block Verification<br/>• 3/3 Red-Team Variant Mutations<br/>• 47/47 Regression Test Suite"]:::verify
+        end
+
+        VultrAI["🧠 <b>Vultr Serverless Inference</b><br/><code>deepseek-v4-flash-0731</code><br/>• AST Root Cause Diagnosis<br/>• Deterministic Minimal Patch Synthesis<br/>• Adversarial Variant Generation"]:::vultr
+    end
+
+    GitHubPR["🚀 <b>GitHub Pull Request</b><br/>• Branch: <code>patchguard/fix-*</code><br/>• SHA-256 Tamper-Evident Evidence Digest<br/>• Host Telemetry Audit Receipt"]:::output
+
+    %% Flow Connections
+    User -->|"Trigger Remediation (WS/HTTP :8001)"| FastAPI
+    FastAPI -->|"1. Spawn via /var/run/docker.sock"| SB1
+    SB1 -->|"2. Exploit Confirmed + Execution Trace"| FastAPI
+    FastAPI -->|"3. Dispatch Context & AST"| VultrAI
+    VultrAI -->|"4. Synthesized Unified Patch + Variants"| FastAPI
+    FastAPI -->|"5. Mount Patch to Pristine Container"| SB2
+    SB2 -->|"6. Retest Passed + Telemetry Verified"| FastAPI
+    FastAPI -->|"7. Open Cryptographically Signed PR"| GitHubPR
+    FastAPI -.->|"Live Stage Stream & Telemetry"| User
 ## 3. How the Agent Executes Real Tasks (The 4-Phase Loop)
 
 1. **Adversarial Reproduction (Sandbox #01):**  
