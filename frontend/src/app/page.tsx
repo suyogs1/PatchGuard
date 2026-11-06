@@ -55,6 +55,13 @@ export default function AirlockDashboard() {
     }
   };
 
+  const getBackendUrl = () => {
+    if (typeof window !== "undefined") {
+      return `http://${window.location.hostname}:8001`;
+    }
+    return "http://64.177.57.156:8001";
+  };
+
   useEffect(() => {
     setEditorCode(targets[selectedTargetKey].code);
   }, [selectedTargetKey]);
@@ -62,7 +69,7 @@ export default function AirlockDashboard() {
   useEffect(() => {
     const fetchTelem = async () => {
       try {
-        const res = await fetch("/api/health");
+        const res = await fetch(`${getBackendUrl()}/api/health`);
         const data = await res.json();
         if (data.telemetry) setHostTelemetry(data.telemetry);
       } catch {}
@@ -87,7 +94,7 @@ export default function AirlockDashboard() {
     setContainmentLog("Spawning gVisor (runsc) isolated sandbox...\n");
     const payload = activeTab === "preset" ? editorCode : customPayload;
     try {
-      const res = await fetch("/api/execute", {
+      const res = await fetch(`${getBackendUrl()}/api/execute`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: payload, timeout_sec: 8 }),
@@ -110,8 +117,9 @@ export default function AirlockDashboard() {
     setPrResult(null);
     setHashVerified(null);
 
+    const host = window.location.hostname;
     const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const ws = new WebSocket(`${wsProtocol}//${window.location.host}/ws/airlock-pipeline`);
+    const ws = new WebSocket(`${wsProtocol}//${host}:8001/ws/airlock-pipeline`);
 
     ws.onopen = () => {
       ws.send(JSON.stringify({
@@ -164,7 +172,7 @@ export default function AirlockDashboard() {
     if (!verdict) return;
     setPrLoading(true);
     try {
-      const res = await fetch("/api/create-pr", {
+      const res = await fetch(`${getBackendUrl()}/api/create-pr`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
