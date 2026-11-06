@@ -30,13 +30,12 @@ PatchGuard AIRLOCK uses Vultr as its core control plane and intelligence engine:
   Deploys, manages, and provisions the multi-container production stack (FastAPI backend + Next.js frontend) with automated zero-downtime builds and network isolation.
 * **Vultr Serverless Inference (`deepseek-v4-flash-0731`):**  
   Powers the autonomous reasoning engine. When Sandbox #01 captures an active exploit, AIRLOCK dispatches AST data, exception traces, and execution telemetry to Vultr Serverless Inference. The model diagnoses the root cause, analyzes potential attack bypasses, and emits an exact, minimal patch.
-
-  ┌──────────────────────────────────────────────┐
-                    │              Client Browser                  │
-                    │           (Next.js 16 Dashboard)             │
-                    └──────────────────────┬───────────────────────┘
-                                           │ HTTP / WebSocket (:8001)
-                                           ▼
+┌──────────────────────────────────────────────┐
+                        │              Client Browser                  │
+                        │           (Next.js 16 Dashboard)             │
+                        └──────────────────────┬───────────────────────┘
+                                               │ HTTP / WebSocket (:8001)
+                                               ▼
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
 │ VULTR CLOUD COMPUTE CONTROL PLANE                                                       │
 │                                                                                         │
@@ -64,16 +63,15 @@ PatchGuard AIRLOCK uses Vultr as its core control plane and intelligence engine:
 │                                        │  - Runs full 47/47 regression suite         │  │
 │                                        └─────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────┬──────────────────────────────────┘
-│
-│ Verified Fix + Evidence Receipt
-▼
-┌─────────────────────────────────┐
-│       GitHub Pull Request       │
-│ - Branch: patchguard/fix-*      │
-│ - Tamper-evident SHA-256 Digest │
-│ - Host Containment Audit Logs   │
-└─────────────────────────────────┘
-
+                                                       │
+                                                       │ Verified Fix + Evidence Receipt
+                                                       ▼
+                                      ┌─────────────────────────────────┐
+                                      │       GitHub Pull Request       │
+                                      │ - Branch: patchguard/fix-*      │
+                                      │ - Tamper-evident SHA-256 Digest │
+                                      │ - Host Containment Audit Logs   │
+                                      └─────────────────────────────────┘
 ---
 
 ## 3. How the Agent Executes Real Tasks (The 4-Phase Loop)
